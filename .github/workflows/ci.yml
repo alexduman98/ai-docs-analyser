@@ -1,0 +1,45 @@
+#Name
+name: Build and Push to ECR
+
+# TWorkflow trigger
+on:
+  push:
+    branches:
+      - main
+
+# jobs
+jobs:
+  build-and-push:
+    # Use the latest version of Ubuntu as the runner
+    runs-on: ubuntu-latest
+
+    #  permissions t
+    permissions:
+      id-token: write #  OIDC authentication
+      contents: read  #  check out the repository's code
+
+    #  sequence of steps
+    steps:
+      # check repo code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # aws config using oicd
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-west-2
+
+      #  Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+
+      # Build and push the Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/[YOUR ECR REPO NAME HERE]:latest
